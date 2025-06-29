@@ -106,6 +106,7 @@ This proof-of-concept establishes foundation for investigating:
 
 This project (app) is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Open source research platform - contributions and extensions welcome for advancing adaptive interactive system research.
 Written Content (Research Papers, Textual Explanations) are licensed under the **Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)**, [CC BY-SA 4.0 LICENSE](LICENSE_RESOURCES).
+
 ---
 
 ## Author and Contact
