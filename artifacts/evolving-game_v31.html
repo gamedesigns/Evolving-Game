@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Evolution Research Platform</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .mode-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            border: none;
+        }
+
+        .mode-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-card.active {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .target {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+            border-radius: 50%;
+        }
+
+        .target:hover {
+            transform: scale(1.1);
+        }
+
+        .target.normal {
+            background: #4CAF50;
+        }
+
+        .target.powerup {
+            background: #FFD700;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        .target.negative {
+            background: #f44336;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .achievement-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.5s ease;
+            z-index: 1000;
+        }
+
+        .achievement-popup.show {
+            transform: translateX(0);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .evolution-status {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .data-export {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .start-screen {
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100%; 
+            flex-direction: column; 
+            color: white;
+        }
+
+        .controls {
+            text-align: center; 
+            margin-bottom: 20px;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulsing {
+            animation: pulse 1s infinite;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="game-header">
+                <h1 class="game-title">Game Evolution Research Platform</h1>
+                <p>A scientific study of adaptive gameplay mechanics</p>
+            </div>
+
+            <!-- Mode Selector -->
+            <div class="mode-selector">
+                <button class="mode-card" onclick="selectMode('simple')">
+                    <h3>Simple Mode</h3>
+                    <p>Basic click targets (v1)</p>
+                </button>
+                <button class="mode-card active" onclick="selectMode('classic')">
+                    <h3>Classic Evolution</h3>
+                    <p>Progressive complexity</p>
+                </button>
+                <button class="mode-card" onclick="selectMode('experimental')">
+                    <h3>Experimental Evolution</h3>
+                    <p>Rapid adaptation algorithm</p>
+                </button>
+                <button class="mode-card" onclick="selectMode('research')">
+                    <h3>Research Mode</h3>
+                    <p>Data collection focus</p>
+                </button>
+            </div>
+
+            <!-- Evolution Status -->
+            <div class="evolution-status" id="evolutionStatus">
+                Game Evolution Engine: CLASSIC Mode Ready
+            </div>
+
+            <!-- Stats Panel -->
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-value" id="score">0</div>
+                    <div class="stat-label">Score</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="level">1</div>
+                    <div class="stat-label">Evolution Level</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="accuracy">100%</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="adaptations">0</div>
+                    <div class="stat-label">Adaptations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="efficiency">0</div>
+                    <div class="stat-label">Efficiency</div>
+                </div>
+            </div>
+
+            <!-- Game Area -->
+            <div class="game-area" id="gameArea">
+                <div id="startScreen" class="start-screen">
+                    <h2 style="margin-bottom: 20px;">Ready to contribute to science?</h2>
+                    <button class="btn btn-primary" onclick="startGame()">Start Evolution Experiment</button>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="controls">
+                <button class="btn btn-primary" onclick="startGame()" id="startBtn">Start Game</button>
+                <button class="btn btn-primary" onclick="pauseGame()" id="pauseBtn" style="display: none;">Pause</button>
+                <button class="btn btn-primary" onclick="resetGame()">Reset</button>
+                <button class="btn btn-primary" onclick="showSettings()">Settings</button>
+                <button class="btn btn-primary" onclick="showAchievements()">Achievements</button>
+                <button class="btn btn-primary" onclick="showChallenges()">Challenges</button>
+            </div>
+
+            <!-- Data Export -->
+            <div class="data-export">
+                <h3>Research Data Export</h3>
+                <button class="btn btn-secondary" onclick="exportData('csv')">Export CSV</button>
+                <button class="btn btn-secondary" onclick="exportData('json')">Export JSON</button>
+                <button class="btn btn-secondary" onclick="generateReport()">Generate Report</button>
+            </div>
+
+            <!-- Charts Container -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>Performance Over Time</h3>
+                    <canvas id="performanceChart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Evolution Adaptations</h3>
+                    <canvas id="evolutionChart" width="400" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Player Behavior Analysis</h3>
+                    <canvas id="behaviorChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievement Popup -->
+    <div class="achievement-popup" id="achievementPopup">
+        <h3 id="achievementTitle">Achievement Unlocked!</h3>
+        <p id="achievementDesc">Description here</p>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>Research Settings</h2>
+            <div style="margin: 20px 0;">
+                <label>Evolution Speed:</label>
+                <input type="range" id="evolutionSpeed" min="0.5" max="3" step="0.1" value="1">
+                <span id="evolutionSpeedValue">1x</span>
+            </div>
+            <div style="margin: 20px 0;">
+                <label>Data Collection Frequency:</label>
+                <select id="dataFrequency">
+                    <option value="low">Low (every 5s)</option>
+                    <option value="medium" selected>Medium (every 2s)</option>
+                    <option value="high">High (every 0.5s)</option>
+                </select>
+            </div>
+            <div style="margin: 20px 0;">
+                <label>
+                    <input type="checkbox" id="experimentalMode"> Enable rapid evolution
+                </label>
+            </div>
+            <button class="btn btn-primary" onclick="closeSettings()">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- Achievements Modal -->
+    <div class="modal" id="achievementsModal">
+        <div class="modal-content">
+            <h2>Achievements</h2>
+            <div id="achievementsList"></div>
+            <button class="btn btn-primary" onclick="closeAchievements()">Close</button>
+        </div>
+    </div>
+
+    <!-- Challenges Modal -->
+    <div class="modal" id="challengesModal">
+        <div class="modal-content">
+            <h2>Research Challenges</h2>
+            <div id="challengesList"></div>
+            <button class="btn btn-primary" onclick="closeChallenges()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State Management
+        var gameState = {
+            isPlaying: false,
+            mode: 'classic',
+            score: 0,
+            level: 1,
+            targets: [],
+            features: [],
+            evolutionData: [],
+            achievements: [],
+            completedChallenges: [],
+            sessionData: {
+                startTime: null,
+                clicks: [],
+                adaptations: [],
+                performanceMetrics: []
+            },
+            stats: {
+                totalClicks: 0,
+                successfulHits: 0,
+                missedTargets: 0,
+                accuracy: 100,
+                avgReactionTime: 0,
+                efficiency: 0
+            }
+        };
+
+        // Evolution Rules
+        var EVOLUTION_RULES = {
+            simple: [
+                { level: 1, feature: 'basic_targets', threshold: 0 }
+            ],
+            classic: [
+                { level: 2, feature: 'multiple_targets', threshold: 10 },
+                { level: 3, feature: 'moving_targets', threshold: 25 },
+                { level: 4, feature: 'size_variation', threshold: 50 },
+                { level: 5, feature: 'power_ups', threshold: 75 },
+                { level: 6, feature: 'negative_targets', threshold: 100 },
+                { level: 7, feature: 'combo_system', threshold: 150 },
+                { level: 8, feature: 'chain_targets', threshold: 200 }
+            ],
+            experimental: [
+                { level: 2, feature: 'adaptive_speed', threshold: 5 },
+                { level: 3, feature: 'predictive_spawning', threshold: 12 },
+                { level: 4, feature: 'dynamic_difficulty', threshold: 20 },
+                { level: 5, feature: 'neural_patterns', threshold: 30 },
+                { level: 6, feature: 'behavior_analysis', threshold: 45 },
+                { level: 7, feature: 'machine_learning', threshold: 60 }
+            ],
+            research: [
+                { level: 2, feature: 'data_logging', threshold: 8 },
+                { level: 3, feature: 'behavior_tracking', threshold: 15 },
+                { level: 4, feature: 'performance_analysis', threshold: 30 }
+            ]
+        };
+
+        var ACHIEVEMENTS = {
+            firstClick: { name: "First Steps", desc: "Click your first target", points: 10 },
+            quickReflexes: { name: "Quick Reflexes", desc: "React in under 300ms", points: 25 },
+            sharpshooter: { name: "Sharpshooter", desc: "Achieve 95% accuracy", points: 50 },
+            speedDemon: { name: "Speed Demon", desc: "Click 10 targets in 5 seconds", points: 75 },
+            evolutionist: { name: "Evolutionist", desc: "Unlock 5 features", points: 100 },
+            scientist: { name: "Scientist", desc: "Generate 100 data points", points: 150 },
+            perfectGame: { name: "Perfect Game", desc: "100% accuracy for 50 targets", points: 200 },
+            adaptiveMaster: { name: "Adaptive Master", desc: "Reach level 10", points: 300 }
+        };
+
+        var CHALLENGES = {
+            daily: [
+                { id: 'speed_challenge', name: 'Speed Challenge', desc: 'Score 100 points in 60 seconds', reward: 50 },
+                { id: 'accuracy_test', name: 'Accuracy Test', desc: 'Hit 30 targets with 100% accuracy', reward: 75 },
+                { id: 'evolution_sprint', name: 'Evolution Sprint', desc: 'Unlock 3 features in one session', reward: 100 }
+            ],
+            research: [
+                { id: 'data_collector', name: 'Data Collector', desc: 'Generate 500 research data points', reward: 200 },
+                { id: 'behavior_mapper', name: 'Behavior Mapper', desc: 'Complete all game modes', reward: 150 },
+                { id: 'adaptation_expert', name: 'Adaptation Expert', desc: 'Trigger 20 adaptations', reward: 250 }
+            ]
+        };
+
+        // Chart instances
+        var charts = {};
+        var spawnInterval;
+        var dataInterval;
+
+        // Game Mode Selection
+        function selectMode(mode) {
+            // Update visual selection
+            document.querySelectorAll('.mode-card').forEach(function(card) {
+                card.classList.remove('active');
+            });
+            event.target.closest('.mode-card').classList.add('active');
+            
+            // Update game state
+            gameState.mode = mode;
+            updateEvolutionStatus();
+            
+            // Reset game if playing
+            if (gameState.isPlaying) {
+                resetGame();
+            }
+        }
+
+        // Game Control Functions
+        function startGame() {
+            gameState.isPlaying = true;
+            gameState.sessionData.startTime = Date.now();
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.targets = [];
+            gameState.features = [];
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('pauseBtn').style.display = 'inline-block';
+            
+            spawnTarget();
+            startDataCollection();
+            updateUI();
+        }
+
+        function pauseGame() {
+            gameState.isPlaying = false;
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').style.display = 'none';
+            
+            if (spawnInterval) clearTimeout(spawnInterval);
+            if (dataInterval) clearInterval(dataInterval);
+        }
+
+        function resetGame() {
+            gameState.isPlaying = false;
+            gameState.score = 0;
+            gameState.level = 1;
+            gameState.targets = [];
+            gameState.features = [];
+            gameState.stats = {
+                totalClicks: 0,
+                successfulHits: 0,
+                missedTargets: 0,
+                accuracy: 100,
+                avgReactionTime: 0,
+                efficiency: 0
+            };
+            
+            // Clear all targets from game area
+            var gameArea = document.getElementById('gameArea');
+            var targets = gameArea.querySelectorAll('.target');
+            targets.forEach(function(target) {
+                target.remove();
+            });
+            
+            document.getElementById('startScreen').style.display = 'flex';
+            document.getElementById('startBtn').style.display = 'inline-block';
+            document.getElementById('pauseBtn').style.display = 'none';
+            
+            if (spawnInterval) clearTimeout(spawnInterval);
+            if (dataInterval) clearInterval(dataInterval);
+            
+            updateUI();
+        }
+
+        // Target Management
+        function spawnTarget() {
+            if (!gameState.isPlaying) return;
+
+            var target = createTarget();
+            gameState.targets.push(target);
+            renderTarget(target);
+
+            var spawnDelay = calculateSpawnDelay();
+            spawnInterval = setTimeout(function() {
+                if (gameState.isPlaying) spawnTarget();
+            }, spawnDelay);
+        }
+
+        function createTarget() {
+            var gameArea = document.getElementById('gameArea');
+            var rect = gameArea.getBoundingClientRect();
+            
+            var target = {
+                id: Math.random().toString(36).substr(2, 9),
+                x: Math.random() * (400 - 60) + 30,
+                y: Math.random() * (400 - 60) + 30,
+                size: calculateTargetSize(),
+                type: calculateTargetType(),
+                speed: calculateTargetSpeed(),
+                spawnTime: Date.now(),
+                clicked: false
+            };
+
+            return target;
+        }
+
+        function calculateTargetSize() {
+            var baseSize = 40;
+            if (gameState.features.indexOf('size_variation') !== -1) {
+                baseSize = 20 + Math.random() * 40;
+            }
+            return baseSize;
+        }
+
+        function calculateTargetType() {
+            if (gameState.features.indexOf('power_ups') !== -1 && Math.random() < 0.2) return 'powerup';
+            if (gameState.features.indexOf('negative_targets') !== -1 && Math.random() < 0.15) return 'negative';
+            return 'normal';
+        }
+
+        function calculateTargetSpeed() {
+            var speed = 0;
+            if (gameState.features.indexOf('moving_targets') !== -1) speed = 1;
+            if (gameState.features.indexOf('adaptive_speed') !== -1) speed = Math.min(gameState.level * 0.2, 3);
+            return speed;
+        }
+
+        function calculateSpawnDelay() {
+            var baseDelay = 2000;
+            if (gameState.features.indexOf('multiple_targets') !== -1) baseDelay = 1000;
+            if (gameState.mode === 'experimental') baseDelay *= 0.7;
+            return Math.max(baseDelay - (gameState.level * 50), 500);
+        }
+
+        function renderTarget(target) {
+            var targetElement = document.createElement('div');
+            targetElement.className = 'target ' + target.type;
+            targetElement.id = 'target-' + target.id;
+            targetElement.style.left = target.x + 'px';
+            targetElement.style.top = target.y + 'px';
+            targetElement.style.width = target.size + 'px';
+            targetElement.style.height = target.size + 'px';
+            
+            targetElement.addEventListener('click', function(e) {
+                handleTargetClick(target, e);
+            });
+            
+            document.getElementById('gameArea').appendChild(targetElement);
+
+            // Auto-remove after timeout
+            setTimeout(function() {
+                if (!target.clicked) {
+                    removeTarget(target.id);
+                    gameState.stats.missedTargets++;
+                    collectDataPoint('target_missed', { 
+                        targetId: target.id, 
+                        lifespan: Date.now() - target.spawnTime 
+                    });
+                }
+            }, 5000);
+
+            // Animate moving targets
+            if (target.speed > 0) {
+                animateTarget(target, targetElement);
+            }
+        }
+
+        function animateTarget(target, element) {
+            var dx = (Math.random() - 0.5) * target.speed * 2;
+            var dy = (Math.random() - 0.5) * target.speed * 2;
+            
+            function move() {
+                if (!element.parentNode || !gameState.isPlaying) return;
+                
+                target.x += dx;
+                target.y += dy;
+                
+                if (target.x <= 0 || target.x >= 360) dx = -dx;
+                if (target.y <= 0 || target.y >= 360) dy = -dy;
+                
+                element.style.left = target.x + 'px';
+                element.style.top = target.y + 'px';
+                
+                requestAnimationFrame(move);
+            }
+            
+            requestAnimationFrame(move);
+        }
+
+        function handleTargetClick(target, event) {
+            if (target.clicked) return;
+            
+            target.clicked = true;
+            var reactionTime = Date.now() - target.spawnTime;
+            
+            // Update stats
+            gameState.stats.totalClicks++;
+            gameState.stats.successfulHits++;
+            gameState.stats.avgReactionTime = gameState.stats.avgReactionTime === 0 ? 
+                reactionTime : (gameState.stats.avgReactionTime + reactionTime) / 2;
+            
+            // Calculate score
+            var points = 1;
+            if (target.type === 'powerup') points = 5;
+            if (target.type === 'negative') points = -2;
+            
+            // Reaction time bonus
+            if (reactionTime < 300) points *= 2;
+            else if (reactionTime < 500) points *= 1.5;
+            
+            gameState.score += Math.max(points, 0);
+            
+            // Collect detailed data
+            collectDataPoint('target_clicked', {
+                targetId: target.id,
+                reactionTime: reactionTime,
+                targetType: target.type,
+                targetSize: target.size,
+                score: points,
+                accuracy: gameState.stats.successfulHits / gameState.stats.totalClicks
+            });
+            
+            // Visual feedback
+            showClickFeedback(event.clientX, event.clientY, points);
+            removeTarget(target.id);
+            
+            // Check for evolution and achievements
+            checkEvolution();
+            checkAchievements();
+            updateUI();
+        }
+
+        function removeTarget(targetId) {
+            var element = document.getElementById('target-' + targetId);
+            if (element) element.remove();
+            gameState.targets = gameState.targets.filter(function(t) {
+                return t.id !== targetId;
+            });
+        }
+
+        function showClickFeedback(x, y, points) {
+            var feedback = document.createElement('div');
+            feedback.textContent = points > 0 ? '+' + points : points;
+            feedback.style.position = 'fixed';
+            feedback.style.left = x + 'px';
+            feedback.style.top = y + 'px';
+            feedback.style.color = points > 0 ? '#4CAF50' : '#f44336';
+            feedback.style.fontWeight = 'bold';
+            feedback.style.fontSize = '20px';
+            feedback.style.pointerEvents = 'none';
+            feedback.style.zIndex = '1000';
+            feedback.style.transition = 'all 1s ease';
+            
+            document.body.appendChild(feedback);
+            
+            setTimeout(function() {
+                feedback.style.transform = 'translateY(-50px)';
+                feedback.style.opacity = '0';
+            }, 100);
+            
+            setTimeout(function() {
+                if (feedback.parentNode) feedback.remove();
+            }, 1100);
+        }
+
+        // Evolution System
+        function checkEvolution() {
+            var rules = EVOLUTION_RULES[gameState.mode] || EVOLUTION_RULES.classic;
+            var currentRule = null;
+            
+            for (var i = 0; i < rules.length; i++) {
+                var rule = rules[i];
+                if (rule.level === gameState.level + 1 && 
+                    gameState.score >= rule.threshold &&
+                    gameState.features.indexOf(rule.feature) === -1) {
+                    currentRule = rule;
+                    break;
+                }
+            }
+            
+            if (currentRule) {
+                gameState.level++;
+                gameState.features.push(currentRule.feature);
+                
+                var adaptation = {
+                    timestamp: Date.now(),
+                    level: gameState.level,
+                    feature: currentRule.feature,
+                    score: gameState.score,
+                    sessionTime: Date.now() - gameState.sessionData.startTime
+                };
+                
+                gameState.sessionData.adaptations.push(adaptation);
+                collectDataPoint('evolution', adaptation);
+                
+                showEvolutionNotification(currentRule.feature);
+                updateEvolutionStatus();
+            }
+        }
+
+        function showEvolutionNotification(feature) {
+            var notification = document.createElement('div');
+            notification.className = 'evolution-status pulsing';
+            notification.textContent = 'Evolution: ' + feature.replace(/_/g, ' ') + ' unlocked!';
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.left = '50%';
+            notification.style.transform = 'translateX(-50%)';
+            notification.style.zIndex = '1000';
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(function() {
+                if (notification.parentNode) notification.remove();
+            }, 3000);
+        }
+
+        // Achievement System
+        function checkAchievements() {
+            Object.keys(ACHIEVEMENTS).forEach(function(key) {
+                var achievement = ACHIEVEMENTS[key];
+                if (gameState.achievements.indexOf(key) !== -1) return;
+                
+                var unlocked = false;
+                
+                switch(key) {
+                    case 'firstClick':
+                        unlocked = gameState.stats.successfulHits >= 1;
+                        break;
+                    case 'quickReflexes':
+                        unlocked = gameState.stats.avgReactionTime < 300 && gameState.stats.successfulHits > 5;
+                        break;
+                    case 'sharpshooter':
+                        unlocked = (gameState.stats.successfulHits / gameState.stats.totalClicks * 100) >= 95 && gameState.stats.totalClicks > 20;
+                        break;
+                    case 'evolutionist':
+                        unlocked = gameState.features.length >= 5;
+                        break;
+                    case 'scientist':
+                        unlocked = gameState.evolutionData.length >= 100;
+                        break;
+                    case 'adaptiveMaster':
+                        unlocked = gameState.level >= 10;
+                        break;
+                }
+                
+                if (unlocked) {
+                    gameState.achievements.push(key);
+                    showAchievement(achievement);
+                    collectDataPoint('achievement', { 
+                        achievementId: key,
+                        name: achievement.name,
+                        desc: achievement.desc,
+                        points: achievement.points
+                    });
+                }
+            });
+        }
+
+        function showAchievement(achievement) {
+            var popup = document.getElementById('achievementPopup');
+            document.getElementById('achievementTitle').textContent = achievement.name;
+            document.getElementById('achievementDesc').textContent = achievement.desc;
+            
+            popup.classList.add('show');
+            setTimeout(function() {
+                popup.classList.remove('show');
+            }, 4000);
+        }
+
+        // UI Updates
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('level').textContent = gameState.level;
+            var accuracy = gameState.stats.totalClicks > 0 ? 
+                (gameState.stats.successfulHits / gameState.stats.totalClicks) * 100 : 100;
+            document.getElementById('accuracy').textContent = Math.round(accuracy) + '%';
+            document.getElementById('adaptations').textContent = gameState.sessionData.adaptations.length;
+            document.getElementById('efficiency').textContent = 
+                Math.round(gameState.score / Math.max(gameState.stats.totalClicks, 1));
+            
+            updateCharts();
+        }
+
+        function updateEvolutionStatus() {
+            var status = document.getElementById('evolutionStatus');
+            var features = gameState.features;
+            
+            if (features.length === 0) {
+                status.textContent = gameState.mode.toUpperCase() + ' Mode: Ready for evolution';
+            } else {
+                status.textContent = gameState.mode.toUpperCase() + ' Mode: ' + features.length + ' adaptations active';
+            }
+        }
+
+        // Data Collection
+        function collectDataPoint(type, data) {
+            var dataPoint = {
+                timestamp: Date.now(),
+                sessionTime: Date.now() - (gameState.sessionData.startTime || Date.now()),
+                type: type,
+                gameMode: gameState.mode,
+                level: gameState.level,
+                score: gameState.score,
+                features: gameState.features.slice()
+            };
+            
+            if (data) {
+                Object.keys(data).forEach(function(key) {
+                    dataPoint[key] = data[key];
+                });
+            }
+            
+            gameState.evolutionData.push(dataPoint);
+        }
+
+        function startDataCollection() {
+            dataInterval = setInterval(function() {
+                if (gameState.isPlaying) {
+                    collectDataPoint('performance_metric', {
+                        accuracy: gameState.stats.successfulHits / Math.max(gameState.stats.totalClicks, 1),
+                        avgReactionTime: gameState.stats.avgReactionTime,
+                        targetsActive: gameState.targets.length,
+                        efficiency: gameState.score / Math.max(gameState.stats.totalClicks, 1)
+                    });
+                }
+            }, 2000);
+        }
+
+        // Charts
+        function initializeCharts() {
+            var perfCtx = document.getElementById('performanceChart').getContext('2d');
+            charts.performance = new Chart(perfCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Score',
+                        data: [],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Accuracy %',
+                        data: [],
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            var evolCtx = document.getElementById('evolutionChart').getContext('2d');
+            charts.evolution = new Chart(evolCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Adaptations',
+                        data: [],
+                        backgroundColor: 'rgba(76, 175, 80, 0.8)',
+                        borderColor: '#4CAF50',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            var behavCtx = document.getElementById('behaviorChart').getContext('2d');
+            charts.behavior = new Chart(behavCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Speed', 'Accuracy', 'Consistency', 'Adaptability', 'Efficiency'],
+                    datasets: [{
+                        label: 'Player Profile',
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgb(255, 99, 132)',
+                        pointBackgroundColor: 'rgb(255, 99, 132)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(255, 99, 132)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts() {
+            if (!gameState.evolutionData.length) return;
+
+            var recent = gameState.evolutionData.slice(-20);
+            var performanceData = recent.filter(function(d) {
+                return d.type === 'performance_metric';
+            });
+            
+            if (performanceData.length > 0) {
+                charts.performance.data.labels = performanceData.map(function(_, i) {
+                    return i;
+                });
+                charts.performance.data.datasets[0].data = performanceData.map(function(d) {
+                    return d.score;
+                });
+                charts.performance.data.datasets[1].data = performanceData.map(function(d) {
+                    return d.accuracy * 100;
+                });
+                charts.performance.update();
+            }
+
+            var adaptations = gameState.sessionData.adaptations;
+            if (adaptations.length > 0) {
+                charts.evolution.data.labels = adaptations.map(function(a) {
+                    return a.feature.replace(/_/g, ' ');
+                });
+                charts.evolution.data.datasets[0].data = adaptations.map(function(_, i) {
+                    return i + 1;
+                });
+                charts.evolution.update();
+            }
+
+            var recentPerf = performanceData.slice(-5);
+            if (recentPerf.length > 0) {
+                var avgAccuracy = recentPerf.reduce(function(sum, d) {
+                    return sum + d.accuracy;
+                }, 0) / recentPerf.length * 100;
+                var avgSpeed = Math.max(0, 100 - (gameState.stats.avgReactionTime / 10));
+                var consistency = Math.max(0, 100 - Math.abs(avgAccuracy - 95));
+                var adaptability = Math.min(100, gameState.features.length * 15);
+                var efficiency = Math.min(100, (recentPerf[recentPerf.length - 1].efficiency || 0) * 10);
+
+                charts.behavior.data.datasets[0].data = [avgSpeed, avgAccuracy, consistency, adaptability, efficiency];
+                charts.behavior.update();
+            }
+        }
+
+        // Modal Functions
+        function showSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function showAchievements() {
+            var modal = document.getElementById('achievementsModal');
+            var list = document.getElementById('achievementsList');
+            
+            var html = '';
+            if (gameState.achievements.length === 0) {
+                html = '<p>No achievements unlocked yet. Keep playing!</p>';
+            } else {
+                gameState.achievements.forEach(function(achievementId) {
+                    var achievement = ACHIEVEMENTS[achievementId];
+                    if (achievement) {
+                        html += '<div style="margin: 10px 0; padding: 10px; background: #f0f0f0; border-radius: 5px;">';
+                        html += '<strong>' + achievement.name + '</strong><br>';
+                        html += achievement.desc + '<br>';
+                        html += '<small>Points: ' + achievement.points + '</small>';
+                        html += '</div>';
+                    }
+                });
+            }
+            
+            list.innerHTML = html;
+            modal.style.display = 'flex';
+        }
+
+        function closeAchievements() {
+            document.getElementById('achievementsModal').style.display = 'none';
+        }
+
+        function showChallenges() {
+            var modal = document.getElementById('challengesModal');
+            var list = document.getElementById('challengesList');
+            
+            var html = '<h3>Daily Challenges</h3>';
+            CHALLENGES.daily.forEach(function(challenge) {
+                var completed = gameState.completedChallenges.indexOf(challenge.id) !== -1;
+                html += '<div style="margin: 10px 0; padding: 10px; background: ' + (completed ? '#e8f5e9' : '#f0f0f0') + '; border-radius: 5px;">';
+                html += '<strong>' + challenge.name + '</strong> ' + (completed ? '✓' : '') + '<br>';
+                html += challenge.desc + '<br>';
+                html += '<small>Reward: ' + challenge.reward + ' points</small>';
+                html += '</div>';
+            });
+            
+            html += '<h3>Research Challenges</h3>';
+            CHALLENGES.research.forEach(function(challenge) {
+                var completed = gameState.completedChallenges.indexOf(challenge.id) !== -1;
+                html += '<div style="margin: 10px 0; padding: 10px; background: ' + (completed ? '#e8f5e9' : '#f0f0f0') + '; border-radius: 5px;">';
+                html += '<strong>' + challenge.name + '</strong> ' + (completed ? '✓' : '') + '<br>';
+                html += challenge.desc + '<br>';
+                html += '<small>Reward: ' + challenge.reward + ' points</small>';
+                html += '</div>';
+            });
+            
+            list.innerHTML = html;
+            modal.style.display = 'flex';
+        }
+
+        function closeChallenges() {
+            document.getElementById('challengesModal').style.display = 'none';
+        }
+
+        // Data Export
+        function exportData(format) {
+            var sessionDuration = Date.now() - (gameState.sessionData.startTime || Date.now());
+            var data = {
+                sessionInfo: {
+                    mode: gameState.mode,
+                    duration: sessionDuration,
+                    finalScore: gameState.score,
+                    maxLevel: gameState.level,
+                    featuresUnlocked: gameState.features.slice()
+                },
+                evolutionData: gameState.evolutionData,
+                adaptations: gameState.sessionData.adaptations,
+                achievements: gameState.achievements.slice(),
+                stats: gameState.stats
+            };
+
+            if (format === 'csv') {
+                exportCSV(data);
+            } else if (format === 'json') {
+                exportJSON(data);
+            }
+        }
+
+        function exportCSV(data) {
+            var headers = ['timestamp', 'type', 'gameMode', 'level', 'score', 'accuracy', 'reactionTime', 'feature'];
+            var rows = data.evolutionData.map(function(point) {
+                return [
+                    new Date(point.timestamp).toISOString(),
+                    point.type,
+                    point.gameMode,
+                    point.level,
+                    point.score,
+                    point.accuracy || '',
+                    point.reactionTime || '',
+                    point.feature || ''
+                ];
+            });
+
+            var csvContent = [headers].concat(rows).map(function(row) {
+                return row.join(',');
+            }).join('\n');
+            
+            downloadFile('game_evolution_data.csv', csvContent, 'text/csv');
+        }
+
+        function exportJSON(data) {
+            var jsonContent = JSON.stringify(data, null, 2);
+            downloadFile('game_evolution_data.json', jsonContent, 'application/json');
+        }
+
+        function downloadFile(filename, content, mimeType) {
+            var blob = new Blob([content], { type: mimeType });
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function generateReport() {
+            var sessionDuration = Date.now() - (gameState.sessionData.startTime || Date.now());
+            var avgAccuracy = gameState.stats.totalClicks > 0 ? 
+                (gameState.stats.successfulHits / gameState.stats.totalClicks) * 100 : 0;
+
+            var report = '<!DOCTYPE html>\n<html>\n<head>\n    <title>Game Evolution Analysis Report</title>\n    <style>\n        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }\n        h1, h2 { color: #333; }\n        .metric { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }\n        .highlight { background: #e8f5e9; }\n    </style>\n</head>\n<body>\n    <h1>Game Evolution Research Report</h1>\n    <h2>Session Overview</h2>\n    <div class="metric">\n        <strong>Game Mode:</strong> ' + gameState.mode + '<br>\n        <strong>Session Duration:</strong> ' + Math.round(sessionDuration / 1000) + ' seconds<br>\n        <strong>Final Score:</strong> ' + gameState.score + '<br>\n        <strong>Maximum Level:</strong> ' + gameState.level + '\n    </div>\n    \n    <h2>Performance Metrics</h2>\n    <div class="metric ' + (avgAccuracy > 90 ? 'highlight' : '') + '">\n        <strong>Accuracy:</strong> ' + avgAccuracy.toFixed(1) + '%<br>\n        <strong>Total Clicks:</strong> ' + gameState.stats.totalClicks + '<br>\n        <strong>Successful Hits:</strong> ' + gameState.stats.successfulHits + '<br>\n        <strong>Average Reaction Time:</strong> ' + gameState.stats.avgReactionTime.toFixed(0) + 'ms\n    </div>\n    \n    <h2>Evolution Analysis</h2>\n    <div class="metric">\n        <strong>Features Unlocked:</strong> ' + gameState.features.length + '<br>\n        <strong>Adaptations:</strong> ' + gameState.sessionData.adaptations.map(function(a) { return a.feature; }).join(', ') + '<br>\n        <strong>Achievements:</strong> ' + gameState.achievements.length + '\n    </div>\n    \n    <h2>Research Insights</h2>\n    <div class="metric">\n        <p>This session contributed valuable data to our understanding of adaptive gameplay mechanics:</p>\n        <ul>\n            <li>Player adaptation rate: ' + (gameState.sessionData.adaptations.length / Math.max(sessionDuration / 60000, 1)).toFixed(2) + ' adaptations per minute</li>\n            <li>Performance trend: ' + (avgAccuracy > 80 ? 'Positive' : 'Developing') + '</li>\n            <li>Engagement level: ' + (gameState.stats.totalClicks > 50 ? 'High' : 'Moderate') + '</li>\n        </ul>\n    </div>\n    \n    <p><em>Generated on ' + new Date().toLocaleString() + '</em></p>\n</body>\n</html>';
+            
+            downloadFile('evolution_analysis_report.html', report, 'text/html');
+        }
+
+        // Settings handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('evolutionSpeed').addEventListener('input', function(e) {
+                document.getElementById('evolutionSpeedValue').textContent = e.target.value + 'x';
+            });
+        });
+
+        // Initialize the app
+        function initializeApp() {
+            initializeCharts();
+            updateEvolutionStatus();
+            loadSavedData();
+            updateUI();
+        }
+
+        function loadSavedData() {
+            var saved = localStorage.getItem('gameEvolutionData');
+            if (saved) {
+                try {
+                    var data = JSON.parse(saved);
+                    if (data.achievements) {
+                        gameState.achievements = data.achievements;
+                    }
+                    if (data.completedChallenges) {
+                        gameState.completedChallenges = data.completedChallenges;
+                    }
+                } catch (e) {
+                    console.log('No valid saved data found');
+                }
+            }
+        }
+
+        function saveData() {
+            var dataToSave = {
+                achievements: gameState.achievements.slice(),
+                completedChallenges: gameState.completedChallenges.slice(),
+                totalSessions: (JSON.parse(localStorage.getItem('gameEvolutionData') || '{}').totalSessions || 0) + 1
+            };
+            localStorage.setItem('gameEvolutionData', JSON.stringify(dataToSave));
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', initializeApp);
+        window.addEventListener('beforeunload', saveData);
+    </script>
+</body>
+</html>
