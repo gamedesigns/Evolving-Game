@@ -1,4 +1,4 @@
-# Adaptive Game Evolution Research Platform
+# Adaptive Game Evolution Research
 
 [![Play Online](https://img.shields.io/badge/Play-Online-brightgreen?style=for-the-badge)](https://gamedesigns.github.io/Evolving-Game)
 
