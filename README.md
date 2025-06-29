@@ -112,6 +112,6 @@ Written Content (Research Papers, Textual Explanations) are licensed under the *
 ## Author and Contact
 
 **Daniel Sandner**
-- Game Design and Game Mechanics Researcher
+- Game Design and Game Mechanics Researcher [(sandner.art|)](https://github.com/sandner-art)
 - Exploring Novel Interactive Mechanics
 - Contact: For research collaboration or technical questions regarding implementation and methodology, [Evolving Game App - Research](https://github.com/gamedesigns/Evolving-Game/issues)
